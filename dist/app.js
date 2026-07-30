@@ -34,7 +34,8 @@ const WEEKDAY_NAMES = {
 // Aktueller Bearbeitungsmodus
 let editingAlarmId = null;
 let currentlyRingingAlarm = null;
-let lastTriggeredAlarmKey = null; // Verhindert doppeltes Auslösen in derselben Minute
+let lastTriggeredMinuteKey = null;
+const triggeredAlarmIds = new Set(); // Verhindert doppeltes Auslösen pro Alarm und Minute
 let use24HourFormat = true; // 24-Stunden-Format
 
 // Sleep Mode Einstellungen
@@ -102,10 +103,11 @@ function checkAlarms(now) {
     const currentDay = WEEKDAYS_MAP[now.getDay()];
     const currentSeconds = now.getSeconds();
     
-    // Reset Tracking-Key wenn Minute sich ändert
+    // Bereits ausgelöste Alarme beim Wechsel in eine neue Minute zurücksetzen
     const currentMinuteKey = `${currentTime}-${currentDay}`;
-    if (lastTriggeredAlarmKey && !lastTriggeredAlarmKey.startsWith(currentTime)) {
-        lastTriggeredAlarmKey = null;
+    if (lastTriggeredMinuteKey !== currentMinuteKey) {
+        lastTriggeredMinuteKey = currentMinuteKey;
+        triggeredAlarmIds.clear();
     }
     
     const alarms = AlarmManager.getAlarms();
@@ -127,10 +129,9 @@ function checkAlarms(now) {
         }
         
         // Alarm auslösen - innerhalb der gesamten Minute, aber nur einmal pro Alarm pro Minute
-        const alarmTriggerKey = `${currentTime}-${alarm.id}`;
-        if (alarm.time === currentTime && lastTriggeredAlarmKey !== alarmTriggerKey) {
+        if (alarm.time === currentTime && !triggeredAlarmIds.has(alarm.id)) {
             console.log('Triggering alarm:', alarm.label || alarm.time, 'at second:', currentSeconds);
-            lastTriggeredAlarmKey = alarmTriggerKey;
+            triggeredAlarmIds.add(alarm.id);
             triggerAlarm(alarm);
             break;
         }
@@ -153,7 +154,7 @@ function triggerAlarm(alarm) {
     
     // Sound abspielen
     const fadeEnabled = alarm.fadeEnabled !== false;
-    const vol = typeof alarm.volume === 'object' ? (alarm.volume.end ?? 0.7) : (alarm.volume || 0.7);
+    const vol = typeof alarm.volume === 'object' ? (alarm.volume.end ?? 0.7) : (alarm.volume ?? 0.7);
     AudioPlayer.playAlarm(alarm.sound || 'gentle-rise', {
         startVolume: fadeEnabled ? 0.1 : vol,
         endVolume: vol,
@@ -258,11 +259,12 @@ function renderAlarms() {
     const alarms = AlarmManager.getAlarms();
     
     if (alarms.length === 0) {
-        alarmsListEl.innerHTML = `
-            <div class="empty-state">
-                <p>No alarms set</p>
-            </div>
-        `;
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        const message = document.createElement('p');
+        message.textContent = 'No alarms set';
+        emptyState.append(message);
+        alarmsListEl.replaceChildren(emptyState);
         updateNextAlarm();
         return;
     }
@@ -270,43 +272,61 @@ function renderAlarms() {
     const daysLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     const daysOrder = ['so', 'mo', 'di', 'mi', 'do', 'fr', 'sa'];
     
-    alarmsListEl.innerHTML = alarms.map(alarm => `
-        <div class="alarm-item ${alarm.enabled ? '' : 'disabled'}" data-id="${alarm.id}">
-            <div class="alarm-info" data-alarm-id="${alarm.id}">
-                <div class="alarm-time-display">${alarm.time}${alarm.repeatType === 'once' ? '<span class="badge-once">Once</span>' : ''}</div>
-                <div class="alarm-details">${alarm.label || 'Alarm'}</div>
-                <div class="alarm-days-mini">
-                    ${daysOrder.map((day, i) => `
-                        <span class="${alarm.days.includes(day) ? 'active' : ''}">${daysLabels[i]}</span>
-                    `).join('')}
-                </div>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" class="alarm-toggle" data-alarm-id="${alarm.id}" ${alarm.enabled ? 'checked' : ''}>
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-    `).join('');
-    
-    // Event-Delegation für Alarm-Klicks
-    alarmsListEl.querySelectorAll('.alarm-info').forEach(el => {
-        el.addEventListener('click', (e) => {
-            const alarmId = e.currentTarget.dataset.alarmId;
-            editAlarm(alarmId);
+    const alarmItems = alarms.map(alarm => {
+        const item = document.createElement('div');
+        item.className = `alarm-item${alarm.enabled ? '' : ' disabled'}`;
+        item.dataset.id = alarm.id;
+
+        const info = document.createElement('div');
+        info.className = 'alarm-info';
+        info.dataset.alarmId = alarm.id;
+        info.addEventListener('click', () => editAlarm(alarm.id));
+
+        const time = document.createElement('div');
+        time.className = 'alarm-time-display';
+        time.textContent = alarm.time;
+        if (alarm.repeatType === 'once') {
+            const badge = document.createElement('span');
+            badge.className = 'badge-once';
+            badge.textContent = 'Once';
+            time.append(badge);
+        }
+
+        const details = document.createElement('div');
+        details.className = 'alarm-details';
+        details.textContent = alarm.label || 'Alarm';
+
+        const days = document.createElement('div');
+        days.className = 'alarm-days-mini';
+        daysOrder.forEach((day, index) => {
+            const dayElement = document.createElement('span');
+            dayElement.classList.toggle('active', alarm.days.includes(day));
+            dayElement.textContent = daysLabels[index];
+            days.append(dayElement);
         });
-    });
-    
-    // Event-Delegation für Toggle-Switches
-    alarmsListEl.querySelectorAll('.alarm-toggle').forEach(el => {
-        el.addEventListener('change', (e) => {
+
+        info.append(time, details, days);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'toggle-switch';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'alarm-toggle';
+        input.dataset.alarmId = alarm.id;
+        input.checked = alarm.enabled;
+        input.addEventListener('change', (e) => {
             e.stopPropagation();
-            const alarmId = e.target.dataset.alarmId;
-            toggleAlarm(alarmId, e.target.checked);
+            toggleAlarm(alarm.id, input.checked);
         });
-        el.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        input.addEventListener('click', (e) => e.stopPropagation());
+        const slider = document.createElement('span');
+        slider.className = 'toggle-slider';
+        toggle.append(input, slider);
+
+        item.append(info, toggle);
+        return item;
     });
+    alarmsListEl.replaceChildren(...alarmItems);
     
     updateNextAlarm();
     syncWakeSchedule();
@@ -366,7 +386,7 @@ function editAlarm(id) {
     document.getElementById('alarm-time').value = alarm.time;
     document.getElementById('alarm-label').value = alarm.label || '';
     document.getElementById('alarm-sound').value = alarm.sound || 'gentle-rise';
-    const vol = typeof alarm.volume === 'object' ? (alarm.volume.end ?? 0.7) : (alarm.volume || 0.7);
+    const vol = typeof alarm.volume === 'object' ? (alarm.volume.end ?? 0.7) : (alarm.volume ?? 0.7);
     document.getElementById('volume-slider').value = vol * 100;
     document.getElementById('fade-enabled').checked = alarm.fadeEnabled !== false;
     document.getElementById('snooze-enabled').checked = alarm.snooze?.enabled !== false;
@@ -981,9 +1001,6 @@ async function syncWakeSchedule() {
         
         let wakeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
         wakeDate.setDate(wakeDate.getDate() + daysUntilAlarm);
-        
-        // Wake 1 minute early
-        wakeDate.setMinutes(wakeDate.getMinutes() - 1);
         
         const isoString = wakeDate.getFullYear() + '-' +
             String(wakeDate.getMonth() + 1).padStart(2, '0') + '-' +

@@ -118,9 +118,9 @@ const AudioPlayer = (function() {
     }
 
     function playAlarm(soundType, options = {}) {
-        const startVolume = options.startVolume || 0.1;
-        const endVolume = options.endVolume || 1.0;
-        const duration = options.duration || 30;
+        const startVolume = options.startVolume ?? 0.1;
+        const endVolume = options.endVolume ?? 1.0;
+        const duration = options.duration ?? 30;
 
         stop();
 

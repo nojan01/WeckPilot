@@ -59,9 +59,9 @@ const AlarmManager = (function() {
             days: alarmData.days || ['mo', 'di', 'mi', 'do', 'fr'],
             sound: alarmData.sound || 'alarm1',
             volume: {
-                start: alarmData.volume?.start || 0.1,
-                end: alarmData.volume?.end || 1.0,
-                duration: alarmData.volume?.duration || 30
+                start: alarmData.volume?.start ?? 0.1,
+                end: alarmData.volume?.end ?? 1.0,
+                duration: alarmData.volume?.duration ?? 30
             },
             snooze: {
                 enabled: alarmData.snooze?.enabled !== false,
