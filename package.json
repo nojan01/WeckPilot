@@ -1,6 +1,6 @@
 {
   "name": "wecker-app",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Eine moderne Wecker-Anwendung mit flexiblen Weckzeiten und Wochenprogramm.",
   "main": "index.html",
   "scripts": {

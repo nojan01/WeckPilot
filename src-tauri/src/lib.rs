@@ -347,6 +347,7 @@ fn schedule_wake(hour: u8, minute: u8) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .enable_macos_default_menu(false)
     .plugin(tauri_plugin_shell::init())
     .invoke_handler(tauri::generate_handler![
         prevent_sleep,

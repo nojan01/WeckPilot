@@ -16,7 +16,7 @@ let preventSleepEnabled = false;
 
 // DOM-Elemente - werden in init() initialisiert
 let hour1El, hour2El, min1El, min2El, amIndicator, pmIndicator, weekdayItems;
-let nextAlarmText, settingsBtn;
+let nextAlarmText, settingsBtn, quitBtn;
 let alarmsListEl, addAlarmBtn;
 let alarmModal, alarmForm, closeModalBtn, deleteAlarmBtn, modalTitle;
 let alarmNotification, alarmDisplayTime, alarmDisplayLabel, snoozeBtn, dismissBtn;
@@ -548,6 +548,21 @@ function setupEventListeners() {
         });
     }
 
+    if (quitBtn) {
+        quitBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                if (tauriWindow) {
+                    await tauriWindow.getCurrentWindow().close();
+                } else {
+                    window.close();
+                }
+            } catch (err) {
+                console.error('Could not close app:', err);
+            }
+        });
+    }
+
     // Schließe Settings-Panel bei Klick außerhalb
     document.addEventListener('click', (e) => {
         const settingsPanel = document.querySelector('.settings-panel');
@@ -1033,6 +1048,7 @@ function init() {
     
     nextAlarmText = document.getElementById('next-alarm-text');
     settingsBtn = document.getElementById('settings-btn');
+    quitBtn = document.getElementById('quit-btn');
     
     alarmsListEl = document.getElementById('alarms-list');
     addAlarmBtn = document.getElementById('add-alarm-btn');

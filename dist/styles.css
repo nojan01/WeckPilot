@@ -358,6 +358,32 @@ body {
     height: 18px;
 }
 
+/* Quit Button */
+.quit-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #8899aa;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quit-button:hover {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: rgba(244, 67, 54, 0.6);
+    color: #ff6b6b;
+}
+
+.quit-button svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* ==================== SETTINGS PANEL ==================== */
 .settings-panel {
     background: rgba(30, 40, 60, 0.98);
