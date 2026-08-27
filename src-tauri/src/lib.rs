@@ -346,30 +346,52 @@ fn schedule_wake(hour: u8, minute: u8) -> Result<String, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
-    .enable_macos_default_menu(false)
-    .plugin(tauri_plugin_shell::init())
-    .invoke_handler(tauri::generate_handler![
-        prevent_sleep,
-        schedule_wake,
-        check_sleep_permission,
-        wake_screen,
-        is_wake_helper_installed,
-        get_wake_helper_status,
-        install_wake_helper,
-        uninstall_wake_helper,
-        update_wake_schedule
-    ])
-    .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
-      Ok(())
-    })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    tauri::Builder::default()
+        .enable_macos_default_menu(false)
+        .menu(|app| {
+            use tauri::menu::{AboutMetadataBuilder, Menu, PredefinedMenuItem};
+
+            let menu = Menu::default(app)?;
+
+            #[cfg(target_os = "macos")]
+            if let Some(app_menu) = menu.items()?.first().and_then(|item| item.as_submenu()) {
+                let about = AboutMetadataBuilder::new()
+                    .name(Some("AlarmMaster"))
+                    .version(Some(app.package_info().version.to_string()))
+                    .copyright(Some("Copyright © 2026 Norbert Jander"))
+                    .credits(Some(include_str!("../../LICENSE")))
+                    .build();
+                let about_item =
+                    PredefinedMenuItem::about(app, Some("Über AlarmMaster"), Some(about))?;
+
+                app_menu.remove_at(0)?;
+                app_menu.insert(&about_item, 0)?;
+            }
+
+            Ok(menu)
+        })
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![
+            prevent_sleep,
+            schedule_wake,
+            check_sleep_permission,
+            wake_screen,
+            is_wake_helper_installed,
+            get_wake_helper_status,
+            install_wake_helper,
+            uninstall_wake_helper,
+            update_wake_schedule
+        ])
+        .setup(|app| {
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
+            Ok(())
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
