@@ -1,10 +1,10 @@
 # Hinweise zu Drittanbieter-Komponenten
 
-AlarmMaster ist unter der MIT-Lizenz veröffentlicht. Die Anwendung verwendet
+WeckPilot ist unter der MIT-Lizenz veröffentlicht. Die Anwendung verwendet
 darüber hinaus unveränderte Open-Source-Komponenten unter kompatiblen
 Lizenzbedingungen.
 
-## Lizenzprüfung für Version 1.1.3
+## Lizenzprüfung für Version 1.1.4
 
 Geprüft wurden die tatsächlich für `aarch64-apple-darwin` aufgelösten normalen
 und Build-Abhängigkeiten aus `src-tauri/Cargo.lock` sowie die installierten
@@ -16,7 +16,7 @@ NPM-Abhängigkeiten aus `package-lock.json`.
   Unicode-3.0
 - `cssparser`, `cssparser-macros`, `dtoa-short`, `option-ext` und `selectors`:
   MPL-2.0. Diese Komponenten werden unverändert verwendet. Die MPL gilt
-  weiterhin für deren eigene Quelldateien; der eigenständige AlarmMaster-Code
+  weiterhin für deren eigene Quelldateien; der eigenständige WeckPilot-Code
   bleibt MIT-lizenziert.
 - Orbitron: SIL Open Font License 1.1. Die Schrift wird zur Laufzeit über
   Google Fonts geladen und nicht als Schriftdatei mit der App ausgeliefert.

@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.alarmmaster.wake-helper</string>
+    <string>de.little-tools.weckpilot.wake-helper</string>
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/AlarmMasterWakeHelper</string>
+        <string>/usr/local/bin/WeckPilotWakeHelper</string>
     </array>
 
     <!-- Trigger when schedule file changes -->
     <key>WatchPaths</key>
     <array>
-        <string>/Users/Shared/AlarmMaster/schedule.json</string>
+        <string>/Users/Shared/WeckPilot/schedule.json</string>
     </array>
 
     <!-- Also run once per hour as safety net -->
@@ -26,8 +26,8 @@
 
     <!-- Logging -->
     <key>StandardOutPath</key>
-    <string>/Users/Shared/AlarmMaster/launchd-stdout.log</string>
+    <string>/Users/Shared/WeckPilot/launchd-stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/Shared/AlarmMaster/launchd-stderr.log</string>
+    <string>/Users/Shared/WeckPilot/launchd-stderr.log</string>
 </dict>
 </plist>

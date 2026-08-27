@@ -1,6 +1,6 @@
-# AlarmMaster
+# WeckPilot
 
-AlarmMaster ist eine moderne, native Wecker-Anwendung für macOS. Mehrere
+WeckPilot ist eine moderne, native Wecker-Anwendung für macOS. Mehrere
 Weckzeiten, Wochenpläne und eine sanft ansteigende Lautstärke lassen sich in
 einer kompakten Oberfläche verwalten.
 
@@ -16,7 +16,7 @@ einer kompakten Oberfläche verwalten.
 ## Download
 
 Die aktuelle signierte Version steht unter
-[Releases](https://github.com/nojan01/wecker-app/releases/latest) als DMG bereit.
+[Releases](https://github.com/nojan01/WeckPilot/releases/latest) als DMG bereit.
 
 Voraussetzung ist ein Mac mit Apple Silicon. Für den optionalen Wake-Helper
 werden Administratorrechte und die Xcode Command Line Tools benötigt, weil der
@@ -58,6 +58,10 @@ Verbindung zu Google-Servern entstehen.
 
 Copyright © 2026 Norbert Jander
 
-AlarmMaster ist unter der [MIT-Lizenz](LICENSE) veröffentlicht. Hinweise zu den
+WeckPilot ist unter der [MIT-Lizenz](LICENSE) veröffentlicht. Hinweise zu den
 verwendeten Open-Source-Komponenten stehen in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Die interne Bundle-ID bleibt für die Update-Kompatibilität mit bereits
+installierten Versionen unverändert. Bestehende Alarme und ein vorhandener
+Wake-Helper werden von WeckPilot weiterverwendet.

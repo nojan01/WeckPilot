@@ -7,11 +7,11 @@ IDENTITY="Developer ID Application: Norbert Jander (TXF2V79Z6N)"
 NOTARY_PROFILE="DesktopProfileManager"
 VERSION="$(node -p "require('$PROJECT_DIR/package.json').version")"
 BUNDLE_DIR="$PROJECT_DIR/src-tauri/target/release/bundle"
-APP_PATH="$BUNDLE_DIR/macos/AlarmMaster.app"
+APP_PATH="$BUNDLE_DIR/macos/WeckPilot.app"
 DMG_DIR="$BUNDLE_DIR/dmg"
-DMG_PATH="$DMG_DIR/AlarmMaster_${VERSION}_aarch64.dmg"
-NOTARY_ZIP="$BUNDLE_DIR/AlarmMaster_${VERSION}_aarch64-notarization.zip"
-STAGING_DIR="$(mktemp -d /tmp/alarmmaster-dmg.XXXXXX)"
+DMG_PATH="$DMG_DIR/WeckPilot_${VERSION}_aarch64.dmg"
+NOTARY_ZIP="$BUNDLE_DIR/WeckPilot_${VERSION}_aarch64-notarization.zip"
+STAGING_DIR="$(mktemp -d /tmp/weckpilot-dmg.XXXXXX)"
 
 cleanup() {
   rm -rf -- "$STAGING_DIR"
@@ -21,7 +21,7 @@ trap cleanup EXIT
 
 cd "$PROJECT_DIR"
 
-echo "Baue AlarmMaster ${VERSION} ..."
+echo "Baue WeckPilot ${VERSION} ..."
 npm run tauri:build -- --bundles app
 
 echo "Signiere die App mit der Developer ID ..."
@@ -39,10 +39,10 @@ spctl --assess --type execute --verbose=2 "$APP_PATH"
 
 echo "Erstelle das DMG ..."
 mkdir -p "$DMG_DIR"
-ditto "$APP_PATH" "$STAGING_DIR/AlarmMaster.app"
+ditto "$APP_PATH" "$STAGING_DIR/WeckPilot.app"
 ln -s /Applications "$STAGING_DIR/Applications"
 rm -f -- "$DMG_PATH"
-hdiutil create -volname "AlarmMaster" -srcfolder "$STAGING_DIR" \
+hdiutil create -volname "WeckPilot" -srcfolder "$STAGING_DIR" \
   -ov -format UDZO "$DMG_PATH"
 
 echo "Signiere und notarisiere das DMG ..."

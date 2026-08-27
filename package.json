@@ -1,6 +1,6 @@
 {
-  "name": "wecker-app",
-  "version": "1.1.3",
+  "name": "weckpilot",
+  "version": "1.1.4",
   "description": "Eine moderne Wecker-Anwendung mit flexiblen Weckzeiten und Wochenprogramm.",
   "main": "index.html",
   "scripts": {
@@ -13,9 +13,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nojan01/wecker-app.git"
+    "url": "https://github.com/nojan01/WeckPilot.git"
   },
-  "homepage": "https://github.com/nojan01/wecker-app",
+  "homepage": "https://github.com/nojan01/WeckPilot",
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.0"
   }

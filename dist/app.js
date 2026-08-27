@@ -1100,7 +1100,7 @@ function init() {
         }
     }, 10 * 60 * 60 * 1000);
     
-    console.log('AlarmMaster - Initialized');
+    console.log('WeckPilot - Initialized');
 }
 
 // Start

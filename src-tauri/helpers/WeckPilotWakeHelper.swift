@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 //
-// AlarmMasterWakeHelper
+// WeckPilotWakeHelper
 // macOS LaunchDaemon helper that schedules system wake events via pmset.
 //
 // This helper is triggered by launchd when the schedule file changes.
@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - Configuration
 
-let sharedDir = "/Users/Shared/AlarmMaster"
+let sharedDir = "/Users/Shared/WeckPilot"
 let schedulePath = "\(sharedDir)/schedule.json"
 let statePath = "\(sharedDir)/state.json"
 let logPath = "\(sharedDir)/helper.log"
@@ -194,7 +194,7 @@ func formatForPmset(_ date: Date) -> String {
 
 func main() {
     log("========================================")
-    log("AlarmMaster Wake Helper started")
+    log("WeckPilot Wake Helper started")
     
     // Ensure shared directory exists with proper permissions
     let fileManager = FileManager.default

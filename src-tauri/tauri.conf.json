@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "AlarmMaster",
-  "version": "1.1.3",
+  "productName": "WeckPilot",
+  "version": "1.1.4",
   "identifier": "com.alarmmaster.clock",
   "build": {
     "frontendDist": "../dist"
@@ -11,7 +11,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "AlarmMaster",
+        "title": "WeckPilot",
         "width": 700,
         "height": 650,
         "resizable": false,
@@ -46,13 +46,13 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "helpers/AlarmMasterWakeHelper.swift",
-      "helpers/com.alarmmaster.wake-helper.plist",
+      "helpers/WeckPilotWakeHelper.swift",
+      "helpers/de.little-tools.weckpilot.wake-helper.plist",
       "helpers/install.sh",
       "helpers/uninstall.sh"
     ],
     "category": "Utility",
-    "shortDescription": "A beautiful alarm clock with weekly schedule",
-    "longDescription": "Wake Up Time is a modern alarm clock application with digital display, multiple alarms per day, weekly schedule, and progressive volume fade-in."
+    "shortDescription": "WeckPilot – moderner Wecker mit Wochenprogramm",
+    "longDescription": "WeckPilot ist eine moderne Wecker-Anwendung mit Digitalanzeige, mehreren Weckzeiten pro Tag, Wochenprogramm und progressiv ansteigender Lautstärke."
   }
 }

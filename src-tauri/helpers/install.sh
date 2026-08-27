@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# AlarmMaster Wake Helper - Installer
+# WeckPilot Wake Helper - Installer
 # Compiles the Swift helper and installs it as a LaunchDaemon.
 # Must be run with root privileges (via osascript with administrator privileges).
 #
@@ -10,13 +10,18 @@
 set -e
 
 SOURCE_DIR="${1:-.}"
-HELPER_NAME="AlarmMasterWakeHelper"
-PLIST_NAME="com.alarmmaster.wake-helper.plist"
+HELPER_NAME="WeckPilotWakeHelper"
+PLIST_NAME="de.little-tools.weckpilot.wake-helper.plist"
+HELPER_LABEL="de.little-tools.weckpilot.wake-helper"
 INSTALL_DIR="/usr/local/bin"
 PLIST_DIR="/Library/LaunchDaemons"
-SHARED_DIR="/Users/Shared/AlarmMaster"
+SHARED_DIR="/Users/Shared/WeckPilot"
+LEGACY_HELPER_NAME="AlarmMasterWakeHelper"
+LEGACY_PLIST_NAME="com.alarmmaster.wake-helper.plist"
+LEGACY_HELPER_LABEL="com.alarmmaster.wake-helper"
+LEGACY_SHARED_DIR="/Users/Shared/AlarmMaster"
 
-echo "=== AlarmMaster Wake Helper Installer ==="
+echo "=== WeckPilot Wake Helper Installer ==="
 echo "Source directory: $SOURCE_DIR"
 
 # 1. Create shared directory
@@ -24,11 +29,26 @@ echo "Creating shared directory..."
 mkdir -p "$SHARED_DIR"
 chmod 777 "$SHARED_DIR"
 
+# Preserve an existing schedule from versions released as AlarmMaster.
+if [ -d "$LEGACY_SHARED_DIR" ]; then
+    for FILE_NAME in schedule.json state.json; do
+        if [ -f "$LEGACY_SHARED_DIR/$FILE_NAME" ] && [ ! -f "$SHARED_DIR/$FILE_NAME" ]; then
+            cp "$LEGACY_SHARED_DIR/$FILE_NAME" "$SHARED_DIR/$FILE_NAME"
+            chmod 666 "$SHARED_DIR/$FILE_NAME"
+        fi
+    done
+fi
+
 # 2. Unload existing daemon if present
-if launchctl list | grep -q "com.alarmmaster.wake-helper"; then
+if launchctl list | grep -q "$HELPER_LABEL"; then
     echo "Unloading existing daemon..."
     launchctl unload "$PLIST_DIR/$PLIST_NAME" 2>/dev/null || true
 fi
+if launchctl list | grep -q "$LEGACY_HELPER_LABEL"; then
+    echo "Migrating legacy wake helper..."
+    launchctl unload "$PLIST_DIR/$LEGACY_PLIST_NAME" 2>/dev/null || true
+fi
+rm -f "$INSTALL_DIR/$LEGACY_HELPER_NAME" "$PLIST_DIR/$LEGACY_PLIST_NAME"
 
 # 3. Check for Swift compiler
 if ! command -v swiftc &>/dev/null; then
@@ -39,7 +59,7 @@ fi
 
 # 4. Compile Swift helper
 echo "Compiling helper..."
-SWIFT_SOURCE="$SOURCE_DIR/AlarmMasterWakeHelper.swift"
+SWIFT_SOURCE="$SOURCE_DIR/WeckPilotWakeHelper.swift"
 
 if [ ! -f "$SWIFT_SOURCE" ]; then
     echo "ERROR: Swift source not found at: $SWIFT_SOURCE"
@@ -88,7 +108,7 @@ else
     echo "✗ LaunchDaemon NOT found"
 fi
 
-if launchctl list | grep -q "com.alarmmaster.wake-helper"; then
+if launchctl list | grep -q "$HELPER_LABEL"; then
     echo "✓ Daemon loaded and running"
 else
     echo "⚠ Daemon loaded but not yet triggered (will run when schedule changes)"

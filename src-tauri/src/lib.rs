@@ -1,5 +1,5 @@
-use std::process::Command;
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 
 // ============================================================
 // Sleep Prevention & Screen Wake
@@ -14,13 +14,13 @@ fn prevent_sleep(minutes: u32) -> Result<String, String> {
         let output = Command::new("caffeinate")
             .args(["-d", "-t", &seconds.to_string()])
             .spawn();
-        
+
         match output {
             Ok(_) => Ok(format!("Schlafmodus für {} Minuten deaktiviert", minutes)),
-            Err(e) => Err(format!("Fehler: {}", e))
+            Err(e) => Err(format!("Fehler: {}", e)),
         }
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         Err("Nur auf macOS unterstützt".to_string())
@@ -34,7 +34,7 @@ fn check_sleep_permission() -> bool {
     {
         true
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         false
@@ -46,16 +46,14 @@ fn check_sleep_permission() -> bool {
 fn wake_screen() -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
-        let output = Command::new("caffeinate")
-            .args(["-u", "-t", "5"])
-            .spawn();
-        
+        let output = Command::new("caffeinate").args(["-u", "-t", "5"]).spawn();
+
         match output {
             Ok(_) => Ok("Bildschirm aufgeweckt".to_string()),
-            Err(e) => Err(format!("Fehler: {}", e))
+            Err(e) => Err(format!("Fehler: {}", e)),
         }
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         Err("Nur auf macOS unterstützt".to_string())
@@ -66,10 +64,36 @@ fn wake_screen() -> Result<String, String> {
 // Wake Helper Management
 // ============================================================
 
-const HELPER_BINARY: &str = "/usr/local/bin/AlarmMasterWakeHelper";
-const HELPER_PLIST: &str = "/Library/LaunchDaemons/com.alarmmaster.wake-helper.plist";
-const SHARED_DIR: &str = "/Users/Shared/AlarmMaster";
-const SCHEDULE_FILE: &str = "/Users/Shared/AlarmMaster/schedule.json";
+const HELPER_BINARY: &str = "/usr/local/bin/WeckPilotWakeHelper";
+const HELPER_PLIST: &str = "/Library/LaunchDaemons/de.little-tools.weckpilot.wake-helper.plist";
+const HELPER_LABEL: &str = "de.little-tools.weckpilot.wake-helper";
+const SHARED_DIR: &str = "/Users/Shared/WeckPilot";
+const SCHEDULE_FILE: &str = "/Users/Shared/WeckPilot/schedule.json";
+
+// Technische Altpfade bleiben lesbar, damit bestehende Installationen nach
+// der Umbenennung ohne Neuinstallation oder Verlust des Wake-Schedules laufen.
+const LEGACY_HELPER_BINARY: &str = "/usr/local/bin/AlarmMasterWakeHelper";
+const LEGACY_HELPER_PLIST: &str = "/Library/LaunchDaemons/com.alarmmaster.wake-helper.plist";
+const LEGACY_HELPER_LABEL: &str = "com.alarmmaster.wake-helper";
+const LEGACY_SHARED_DIR: &str = "/Users/Shared/AlarmMaster";
+const LEGACY_SCHEDULE_FILE: &str = "/Users/Shared/AlarmMaster/schedule.json";
+
+fn current_helper_installed() -> bool {
+    std::path::Path::new(HELPER_BINARY).exists() && std::path::Path::new(HELPER_PLIST).exists()
+}
+
+fn legacy_helper_installed() -> bool {
+    std::path::Path::new(LEGACY_HELPER_BINARY).exists()
+        && std::path::Path::new(LEGACY_HELPER_PLIST).exists()
+}
+
+fn active_helper_paths() -> (&'static str, &'static str, &'static str) {
+    if current_helper_installed() || !legacy_helper_installed() {
+        (SHARED_DIR, SCHEDULE_FILE, HELPER_LABEL)
+    } else {
+        (LEGACY_SHARED_DIR, LEGACY_SCHEDULE_FILE, LEGACY_HELPER_LABEL)
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 struct WakeSchedule {
@@ -95,10 +119,9 @@ struct WakeHelperStatus {
 fn is_wake_helper_installed() -> bool {
     #[cfg(target_os = "macos")]
     {
-        std::path::Path::new(HELPER_BINARY).exists()
-            && std::path::Path::new(HELPER_PLIST).exists()
+        current_helper_installed() || legacy_helper_installed()
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     false
 }
@@ -108,37 +131,42 @@ fn is_wake_helper_installed() -> bool {
 fn get_wake_helper_status() -> WakeHelperStatus {
     #[cfg(target_os = "macos")]
     {
-        let installed = std::path::Path::new(HELPER_BINARY).exists()
-            && std::path::Path::new(HELPER_PLIST).exists();
-        
+        let installed = current_helper_installed() || legacy_helper_installed();
+        let (shared_dir, schedule_file, helper_label) = active_helper_paths();
+
         // Check if daemon is loaded
         let daemon_loaded = Command::new("launchctl")
             .args(["list"])
             .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).contains("com.alarmmaster.wake-helper"))
+            .map(|o| String::from_utf8_lossy(&o.stdout).contains(helper_label))
             .unwrap_or(false);
-        
+
         // Read current schedule
-        let (has_schedule, next_wake) = if let Ok(data) = std::fs::read_to_string(SCHEDULE_FILE) {
+        let (has_schedule, next_wake) = if let Ok(data) = std::fs::read_to_string(schedule_file) {
             if let Ok(schedule) = serde_json::from_str::<WakeSchedule>(&data) {
-                (schedule.enabled && schedule.next_wake.is_some(), schedule.next_wake)
+                (
+                    schedule.enabled && schedule.next_wake.is_some(),
+                    schedule.next_wake,
+                )
             } else {
                 (false, None)
             }
         } else {
             (false, None)
         };
-        
+
         // Read last few lines of log
-        let log_path = format!("{}/helper.log", SHARED_DIR);
-        let log_tail = std::fs::read_to_string(&log_path)
-            .ok()
-            .map(|content| {
-                let lines: Vec<&str> = content.lines().collect();
-                let start = if lines.len() > 10 { lines.len() - 10 } else { 0 };
-                lines[start..].join("\n")
-            });
-        
+        let log_path = format!("{}/helper.log", shared_dir);
+        let log_tail = std::fs::read_to_string(&log_path).ok().map(|content| {
+            let lines: Vec<&str> = content.lines().collect();
+            let start = if lines.len() > 10 {
+                lines.len() - 10
+            } else {
+                0
+            };
+            lines[start..].join("\n")
+        });
+
         WakeHelperStatus {
             installed,
             daemon_loaded,
@@ -147,7 +175,7 @@ fn get_wake_helper_status() -> WakeHelperStatus {
             log_tail,
         }
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         WakeHelperStatus {
@@ -166,28 +194,34 @@ fn install_wake_helper(app: tauri::AppHandle) -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
         use tauri::Manager;
-        
-        let resource_dir = app.path().resource_dir().map_err(|e| format!("Resource dir error: {}", e))?;
+
+        let resource_dir = app
+            .path()
+            .resource_dir()
+            .map_err(|e| format!("Resource dir error: {}", e))?;
         let helpers_dir = resource_dir.join("helpers");
-        
+
         // Verify helper files exist
         let install_script = helpers_dir.join("install.sh");
         if !install_script.exists() {
-            return Err(format!("Install script not found at: {}", install_script.display()));
+            return Err(format!(
+                "Install script not found at: {}",
+                install_script.display()
+            ));
         }
-        
+
         // Run install script with admin privileges via osascript
         let script = format!(
             "do shell script \"bash '{}' '{}'\" with administrator privileges",
             install_script.display(),
             helpers_dir.display()
         );
-        
+
         let output = Command::new("osascript")
             .args(["-e", &script])
             .output()
             .map_err(|e| format!("Failed to run installer: {}", e))?;
-        
+
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
             Ok(format!("Wake Helper erfolgreich installiert.\n{}", stdout))
@@ -200,7 +234,7 @@ fn install_wake_helper(app: tauri::AppHandle) -> Result<String, String> {
             }
         }
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         Err("Nur auf macOS unterstützt".to_string())
@@ -213,25 +247,31 @@ fn uninstall_wake_helper(app: tauri::AppHandle) -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
         use tauri::Manager;
-        
-        let resource_dir = app.path().resource_dir().map_err(|e| format!("Resource dir error: {}", e))?;
+
+        let resource_dir = app
+            .path()
+            .resource_dir()
+            .map_err(|e| format!("Resource dir error: {}", e))?;
         let helpers_dir = resource_dir.join("helpers");
         let uninstall_script = helpers_dir.join("uninstall.sh");
-        
+
         if !uninstall_script.exists() {
-            return Err(format!("Uninstall script not found at: {}", uninstall_script.display()));
+            return Err(format!(
+                "Uninstall script not found at: {}",
+                uninstall_script.display()
+            ));
         }
-        
+
         let script = format!(
             "do shell script \"bash '{}'\" with administrator privileges",
             uninstall_script.display()
         );
-        
+
         let output = Command::new("osascript")
             .args(["-e", &script])
             .output()
             .map_err(|e| format!("Failed to run uninstaller: {}", e))?;
-        
+
         if output.status.success() {
             Ok("Wake Helper erfolgreich deinstalliert.".to_string())
         } else {
@@ -243,7 +283,7 @@ fn uninstall_wake_helper(app: tauri::AppHandle) -> Result<String, String> {
             }
         }
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         Err("Nur auf macOS unterstützt".to_string())
@@ -259,45 +299,47 @@ fn update_wake_schedule(
 ) -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
+        let (shared_dir, schedule_file, _) = active_helper_paths();
+
         // Ensure shared directory exists
-        std::fs::create_dir_all(SHARED_DIR)
+        std::fs::create_dir_all(shared_dir)
             .map_err(|e| format!("Cannot create directory: {}", e))?;
-        
+
         // Set directory permissions so both user and daemon can access
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let perms = std::fs::Permissions::from_mode(0o777);
-            std::fs::set_permissions(SHARED_DIR, perms).ok();
+            std::fs::set_permissions(shared_dir, perms).ok();
         }
-        
+
         let schedule = WakeSchedule {
             next_wake: next_wake.clone(),
             enabled: next_wake.is_some(),
             alarm_time,
             label,
         };
-        
-        let json = serde_json::to_string_pretty(&schedule)
-            .map_err(|e| format!("JSON error: {}", e))?;
-        
-        std::fs::write(SCHEDULE_FILE, &json)
+
+        let json =
+            serde_json::to_string_pretty(&schedule).map_err(|e| format!("JSON error: {}", e))?;
+
+        std::fs::write(schedule_file, &json)
             .map_err(|e| format!("Cannot write schedule: {}", e))?;
-        
+
         // Set file permissions
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let perms = std::fs::Permissions::from_mode(0o666);
-            std::fs::set_permissions(SCHEDULE_FILE, perms).ok();
+            std::fs::set_permissions(schedule_file, perms).ok();
         }
-        
+
         match &schedule.next_wake {
             Some(wake) => Ok(format!("Wake-Schedule aktualisiert: {}", wake)),
             None => Ok("Wake-Schedule deaktiviert".to_string()),
         }
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         Err("Nur auf macOS unterstützt".to_string())
@@ -309,18 +351,21 @@ fn update_wake_schedule(
 fn schedule_wake(hour: u8, minute: u8) -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
-        use chrono::{Local, Duration};
-        
+        use chrono::{Duration, Local};
+
         let now = Local::now();
-        let mut wake_time = now.date_naive().and_hms_opt(hour as u32, minute as u32, 0).unwrap();
-        
+        let mut wake_time = now
+            .date_naive()
+            .and_hms_opt(hour as u32, minute as u32, 0)
+            .unwrap();
+
         if wake_time.and_local_timezone(Local).unwrap() <= now {
             wake_time = wake_time + Duration::days(1);
         }
-        
+
         let iso_formatted = wake_time.format("%Y-%m-%dT%H:%M:%S").to_string();
         let alarm_time = format!("{:02}:{:02}", hour, minute);
-        
+
         // Write schedule file for the helper
         let schedule = WakeSchedule {
             next_wake: Some(iso_formatted.clone()),
@@ -328,16 +373,16 @@ fn schedule_wake(hour: u8, minute: u8) -> Result<String, String> {
             alarm_time: Some(alarm_time),
             label: None,
         };
-        
-        std::fs::create_dir_all(SHARED_DIR).ok();
-        let json = serde_json::to_string_pretty(&schedule)
-            .map_err(|e| format!("JSON error: {}", e))?;
-        std::fs::write(SCHEDULE_FILE, &json)
-            .map_err(|e| format!("Write error: {}", e))?;
-        
+
+        let (shared_dir, schedule_file, _) = active_helper_paths();
+        std::fs::create_dir_all(shared_dir).ok();
+        let json =
+            serde_json::to_string_pretty(&schedule).map_err(|e| format!("JSON error: {}", e))?;
+        std::fs::write(schedule_file, &json).map_err(|e| format!("Write error: {}", e))?;
+
         Ok(format!("Aufwachen geplant für {}", iso_formatted))
     }
-    
+
     #[cfg(not(target_os = "macos"))]
     {
         Err("Nur auf macOS unterstützt".to_string())
@@ -356,13 +401,13 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             if let Some(app_menu) = menu.items()?.first().and_then(|item| item.as_submenu()) {
                 let about = AboutMetadataBuilder::new()
-                    .name(Some("AlarmMaster"))
+                    .name(Some("WeckPilot"))
                     .version(Some(app.package_info().version.to_string()))
                     .copyright(Some("Copyright © 2026 Norbert Jander"))
                     .credits(Some(include_str!("../../LICENSE")))
                     .build();
                 let about_item =
-                    PredefinedMenuItem::about(app, Some("Über AlarmMaster"), Some(about))?;
+                    PredefinedMenuItem::about(app, Some("Über WeckPilot"), Some(about))?;
 
                 app_menu.remove_at(0)?;
                 app_menu.insert(&about_item, 0)?;
