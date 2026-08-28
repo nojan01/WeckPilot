@@ -10,6 +10,8 @@ einer kompakten Oberfläche verwalten.
 - individuelle Wochentage und Beschriftungen
 - Snooze-Funktion und progressiv ansteigende Lautstärke
 - lokale Speicherung der Einstellungen
+- deutsche und englische Oberfläche mit automatischer Systemspracherkennung
+  und manueller Sprachwahl
 - optionaler Wake-Helper, der den Mac für einen Alarm aufwecken kann
 - native, signierte und von Apple notarisierte macOS-App
 

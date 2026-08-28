@@ -20,16 +20,16 @@ let nextAlarmText, settingsBtn, quitBtn;
 let alarmsListEl, addAlarmBtn;
 let alarmModal, alarmForm, closeModalBtn, deleteAlarmBtn, modalTitle;
 let alarmNotification, alarmDisplayTime, alarmDisplayLabel, snoozeBtn, dismissBtn;
+let wakeHelperInstalled = false;
+
+const t = (key, values = {}) => window.I18n?.t(key, values) ?? key;
 
 // Wochentage Mapping
 const WEEKDAYS_MAP = {
     0: 'so', 1: 'mo', 2: 'di', 3: 'mi', 4: 'do', 5: 'fr', 6: 'sa'
 };
 
-const WEEKDAY_NAMES = {
-    'so': 'Sunday', 'mo': 'Monday', 'di': 'Tuesday', 
-    'mi': 'Wednesday', 'do': 'Thursday', 'fr': 'Friday', 'sa': 'Saturday'
-};
+const getWeekdayName = day => t(`weekdays.full.${day}`);
 
 // Aktueller Bearbeitungsmodus
 let editingAlarmId = null;
@@ -146,7 +146,7 @@ function triggerAlarm(alarm) {
     
     // UI aktualisieren
     alarmDisplayTime.textContent = alarm.time;
-    alarmDisplayLabel.textContent = alarm.label || 'Alarm';
+    alarmDisplayLabel.textContent = alarm.label || t('alarm');
     alarmNotification.classList.remove('hidden');
     
     // Snooze-Button anzeigen/verstecken
@@ -204,7 +204,7 @@ function snoozeAlarm() {
     currentlyRingingAlarm = null;
     
     // Status aktualisieren
-    nextAlarmText.textContent = `Snooze: ${snoozeDuration} min`;
+    nextAlarmText.textContent = t('snoozeMinutes', { minutes: snoozeDuration });
     nextAlarmText.classList.add('alarm-set');
 }
 
@@ -221,7 +221,7 @@ function updateNextAlarm() {
         
         let dayText = '';
         if (nextAlarm.days.includes(currentDay) && nextAlarm.time > currentTime) {
-            dayText = 'Today';
+            dayText = t('today');
         } else {
             // Finde nächsten Tag
             const dayOrder = ['so', 'mo', 'di', 'mi', 'do', 'fr', 'sa'];
@@ -233,9 +233,9 @@ function updateNextAlarm() {
                 
                 if (nextAlarm.days.includes(checkDay)) {
                     if (i === 1) {
-                        dayText = 'Tomorrow';
+                        dayText = t('tomorrow');
                     } else {
-                        dayText = WEEKDAY_NAMES[checkDay];
+                        dayText = getWeekdayName(checkDay);
                     }
                     break;
                 }
@@ -243,11 +243,11 @@ function updateNextAlarm() {
         }
         
         // Zeige Alarm-Label statt Tag, oder "Alarm" als Fallback
-        const labelText = nextAlarm.label || dayText || 'Alarm';
+        const labelText = nextAlarm.label || dayText || t('alarm');
         nextAlarmText.textContent = `${labelText}, ${nextAlarm.time}`;
         nextAlarmText.classList.add('alarm-set');
     } else {
-        nextAlarmText.textContent = 'No alarm set';
+        nextAlarmText.textContent = t('noAlarmSet');
         nextAlarmText.classList.remove('alarm-set');
     }
 }
@@ -262,14 +262,13 @@ function renderAlarms() {
         const emptyState = document.createElement('div');
         emptyState.className = 'empty-state';
         const message = document.createElement('p');
-        message.textContent = 'No alarms set';
+        message.textContent = t('noAlarms');
         emptyState.append(message);
         alarmsListEl.replaceChildren(emptyState);
         updateNextAlarm();
         return;
     }
     
-    const daysLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     const daysOrder = ['so', 'mo', 'di', 'mi', 'do', 'fr', 'sa'];
     
     const alarmItems = alarms.map(alarm => {
@@ -288,20 +287,20 @@ function renderAlarms() {
         if (alarm.repeatType === 'once') {
             const badge = document.createElement('span');
             badge.className = 'badge-once';
-            badge.textContent = 'Once';
+            badge.textContent = t('once');
             time.append(badge);
         }
 
         const details = document.createElement('div');
         details.className = 'alarm-details';
-        details.textContent = alarm.label || 'Alarm';
+        details.textContent = alarm.label || t('alarm');
 
         const days = document.createElement('div');
         days.className = 'alarm-days-mini';
         daysOrder.forEach((day, index) => {
             const dayElement = document.createElement('span');
             dayElement.classList.toggle('active', alarm.days.includes(day));
-            dayElement.textContent = daysLabels[index];
+            dayElement.textContent = t(`weekdays.narrow.${day}`);
             days.append(dayElement);
         });
 
@@ -345,7 +344,7 @@ function toggleAlarm(id, enabled) {
  */
 function openNewAlarmModal() {
     editingAlarmId = null;
-    modalTitle.textContent = 'New Alarm';
+    modalTitle.textContent = t('newAlarm');
     deleteAlarmBtn.classList.add('hidden');
     
     // Form zurücksetzen
@@ -378,7 +377,7 @@ function editAlarm(id) {
     if (!alarm) return;
     
     editingAlarmId = id;
-    modalTitle.textContent = 'Edit Alarm';
+    modalTitle.textContent = t('editAlarm');
     deleteAlarmBtn.classList.remove('hidden');
     
     // Form befüllen
@@ -432,7 +431,7 @@ function saveAlarm(e) {
     
     if (days.length === 0) {
         console.log('No days selected');
-        alert('Please select at least one day.');
+        alert(t('selectDay'));
         return;
     }
     
@@ -811,7 +810,7 @@ function savePowerSettings() {
 // Aktiviere Schlafverhinderung
 async function activatePreventSleep() {
     if (!tauriInvoke) {
-        console.log('Tauri invoke nicht verfügbar');
+        console.log('Tauri invoke is unavailable');
         return;
     }
     
@@ -821,7 +820,7 @@ async function activatePreventSleep() {
         console.log('Prevent Sleep:', result);
         updatePowerStatus();
     } catch (err) {
-        console.error('Fehler bei prevent_sleep:', err);
+        console.error('prevent_sleep error:', err);
     }
 }
 
@@ -830,10 +829,10 @@ function updatePowerStatus() {
     if (!powerStatus) return;
     
     if (preventSleepEnabled) {
-        powerStatus.textContent = '✓ Mac-Schlafmodus wird verhindert';
+        powerStatus.textContent = t('powerActive');
         powerStatus.classList.add('active');
     } else {
-        powerStatus.textContent = 'Verhindert Mac-Schlafmodus wenn Alarm aktiv';
+        powerStatus.textContent = t('powerInactive');
         powerStatus.classList.remove('active');
     }
 }
@@ -871,7 +870,7 @@ async function scheduleWakeForNextAlarm() {
         console.log('Schedule Wake:', result);
     } catch (err) {
         // pmset benötigt sudo - das ist normal
-        console.log('Schedule Wake erfordert Admin-Rechte:', err);
+        console.log('Schedule Wake requires administrator privileges:', err);
     }
 }
 
@@ -904,7 +903,7 @@ async function initWakeHelper() {
                 const nextEl = document.getElementById('wake-helper-next');
                 if (infoEl && nextEl) {
                     infoEl.style.display = 'block';
-                    nextEl.textContent = 'Next wake: ' + status.next_wake;
+                    nextEl.textContent = t('nextWake', { value: status.next_wake });
                 }
             }
         }
@@ -920,15 +919,16 @@ function updateWakeHelperUI(installed) {
     
     if (!statusDot || !statusText || !installBtn) return;
     
+    wakeHelperInstalled = installed;
     if (installed) {
         statusDot.className = 'status-dot active';
-        statusText.textContent = 'Active';
-        installBtn.textContent = 'Uninstall Helper';
+        statusText.textContent = t('active');
+        installBtn.textContent = t('uninstallHelper');
         installBtn.className = 'btn-helper-uninstall';
     } else {
         statusDot.className = 'status-dot inactive';
-        statusText.textContent = 'Not installed';
-        installBtn.textContent = 'Install Helper';
+        statusText.textContent = t('notInstalled');
+        installBtn.textContent = t('installHelper');
         installBtn.className = 'btn-helper-install';
     }
 }
@@ -937,15 +937,15 @@ async function toggleWakeHelper() {
     console.log('toggleWakeHelper called');
     if (!tauriInvoke) {
         console.error('Wake Helper: tauriInvoke not available');
-        alert('Tauri API not available. Please run as Tauri app.');
+        alert(t('tauriUnavailable'));
         return;
     }
     
     const btn = document.getElementById('install-helper-btn');
     if (!btn) return;
-    const wasInstalled = btn.textContent === 'Uninstall Helper';
+    const wasInstalled = wakeHelperInstalled;
     btn.disabled = true;
-    btn.textContent = wasInstalled ? 'Removing...' : 'Installing...';
+    btn.textContent = wasInstalled ? t('removing') : t('installing');
     
     try {
         if (wasInstalled) {
@@ -963,7 +963,7 @@ async function toggleWakeHelper() {
         }
     } catch (err) {
         console.error('Wake helper toggle error:', err);
-        alert('Error: ' + err);
+        alert(t('error', { value: err }));
         const installed = await tauriInvoke('is_wake_helper_installed').catch(() => false);
         updateWakeHelperUI(installed);
     }
@@ -1026,7 +1026,7 @@ async function syncWakeSchedule() {
         await tauriInvoke('update_wake_schedule', {
             nextWake: isoString,
             alarmTime: nextAlarm.time,
-            label: nextAlarm.label || 'Alarm'
+            label: nextAlarm.label || t('alarm')
         });
         
         console.log('Wake schedule synced:', isoString, '(in', daysUntilAlarm, 'days)');
@@ -1105,6 +1105,17 @@ function init() {
 
 // Start
 document.addEventListener('DOMContentLoaded', init);
+
+window.addEventListener('weckpilot-language-changed', () => {
+    if (!alarmsListEl) return;
+    renderAlarms();
+    updateNextAlarm();
+    updatePowerStatus();
+    updateWakeHelperUI(wakeHelperInstalled);
+    if (alarmModal && !alarmModal.classList.contains('hidden')) {
+        modalTitle.textContent = editingAlarmId ? t('editAlarm') : t('newAlarm');
+    }
+});
 
 /**
  * Repeat-Type UI aktualisieren

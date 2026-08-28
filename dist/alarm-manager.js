@@ -186,7 +186,7 @@ const AlarmManager = (function() {
         try {
             const imported = JSON.parse(jsonString);
             if (!Array.isArray(imported)) {
-                throw new Error('Ungültiges Format');
+                throw new Error('Invalid format');
             }
             
             alarms = imported.map(a => ({
@@ -197,7 +197,7 @@ const AlarmManager = (function() {
             saveAlarms();
             return true;
         } catch (error) {
-            console.error('Import fehlgeschlagen:', error);
+            console.error('Import failed:', error);
             return false;
         }
     }

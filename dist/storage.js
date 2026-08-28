@@ -25,7 +25,7 @@ const Storage = (function() {
      */
     function set(key, value) {
         if (!isAvailable()) {
-            console.warn('LocalStorage nicht verfügbar');
+            console.warn('LocalStorage is unavailable');
             return false;
         }
 
@@ -34,7 +34,7 @@ const Storage = (function() {
             localStorage.setItem(PREFIX + key, serialized);
             return true;
         } catch (error) {
-            console.error('Fehler beim Speichern:', error);
+            console.error('Save error:', error);
             return false;
         }
     }
@@ -44,7 +44,7 @@ const Storage = (function() {
      */
     function get(key) {
         if (!isAvailable()) {
-            console.warn('LocalStorage nicht verfügbar');
+            console.warn('LocalStorage is unavailable');
             return null;
         }
 
@@ -52,7 +52,7 @@ const Storage = (function() {
             const item = localStorage.getItem(PREFIX + key);
             return item ? JSON.parse(item) : null;
         } catch (error) {
-            console.error('Fehler beim Laden:', error);
+            console.error('Load error:', error);
             return null;
         }
     }
@@ -67,7 +67,7 @@ const Storage = (function() {
             localStorage.removeItem(PREFIX + key);
             return true;
         } catch (error) {
-            console.error('Fehler beim Löschen:', error);
+            console.error('Delete error:', error);
             return false;
         }
     }
@@ -83,7 +83,7 @@ const Storage = (function() {
             keys.forEach(k => localStorage.removeItem(k));
             return true;
         } catch (error) {
-            console.error('Fehler beim Löschen:', error);
+            console.error('Delete error:', error);
             return false;
         }
     }

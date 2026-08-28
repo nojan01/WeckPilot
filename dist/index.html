@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,13 +25,13 @@
                 
                 <!-- Wochentage -->
                 <div class="weekdays-display">
-                    <span class="weekday-item" data-day="so">SUN</span>
-                    <span class="weekday-item" data-day="mo">MON</span>
-                    <span class="weekday-item" data-day="di">TUE</span>
-                    <span class="weekday-item" data-day="mi">WED</span>
-                    <span class="weekday-item" data-day="do">THU</span>
-                    <span class="weekday-item" data-day="fr">FRI</span>
-                    <span class="weekday-item" data-day="sa">SAT</span>
+                    <span class="weekday-item" data-day="so" data-i18n="weekdays.short.so">SUN</span>
+                    <span class="weekday-item" data-day="mo" data-i18n="weekdays.short.mo">MON</span>
+                    <span class="weekday-item" data-day="di" data-i18n="weekdays.short.di">TUE</span>
+                    <span class="weekday-item" data-day="mi" data-i18n="weekdays.short.mi">WED</span>
+                    <span class="weekday-item" data-day="do" data-i18n="weekdays.short.do">THU</span>
+                    <span class="weekday-item" data-day="fr" data-i18n="weekdays.short.fr">FRI</span>
+                    <span class="weekday-item" data-day="sa" data-i18n="weekdays.short.sa">SAT</span>
                 </div>
                 
                 <!-- Digitale Zeitanzeige -->
@@ -57,19 +57,19 @@
                 <!-- Status-Anzeige -->
                 <div class="status-bar">
                     <div class="next-alarm-info">
-                        <span id="next-alarm-text">No alarm set</span>
+                        <span id="next-alarm-text" data-i18n="noAlarmSet">No alarm set</span>
                     </div>
                     <div class="status-controls">
-                        <button id="time-format-btn" class="format-button" title="Toggle 12h/24h">
+                        <button id="time-format-btn" class="format-button" title="Toggle 12/24-hour format" data-i18n-title="toggleTimeFormat">
                             <span id="format-label">24H</span>
                         </button>
-                        <button id="settings-btn" class="settings-button" title="Settings">
+                        <button id="settings-btn" class="settings-button" title="Settings" data-i18n-title="settings">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="3"></circle>
                                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                             </svg>
                         </button>
-                        <button id="quit-btn" class="quit-button" title="Quit WeckPilot" aria-label="Quit WeckPilot">
+                        <button id="quit-btn" class="quit-button" title="Quit WeckPilot" aria-label="Quit WeckPilot" data-i18n-title="quit" data-i18n-aria-label="quit">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
                                 <line x1="12" y1="2" x2="12" y2="12"></line>
@@ -86,8 +86,17 @@
         <!-- Einstellungs-Panel -->
         <div class="settings-panel">
             <div class="settings-header">
-                <h3>Alarm Settings</h3>
-                <button id="add-alarm-btn" class="btn-add-alarm">+ Add Alarm</button>
+                <h3 data-i18n="alarmSettings">Alarm Settings</h3>
+                <div class="settings-actions">
+                    <label class="language-control" for="language-select">
+                        <span data-i18n="language">Language</span>
+                        <select id="language-select" aria-label="Language" data-i18n-aria-label="language">
+                            <option value="en">English</option>
+                            <option value="de">Deutsch</option>
+                        </select>
+                    </label>
+                    <button id="add-alarm-btn" class="btn-add-alarm" data-i18n="addAlarm">+ Add Alarm</button>
+                </div>
             </div>
             
             <!-- Alarm-Liste -->
@@ -100,7 +109,7 @@
             <!-- Schlafmodus Einstellungen -->
             <div class="sleep-mode-section">
                 <div class="sleep-mode-header">
-                    <h4>🌙 Sleep Mode</h4>
+                    <h4 data-i18n="sleepMode">🌙 Sleep Mode</h4>
                     <label class="toggle-switch">
                         <input type="checkbox" id="sleep-mode-toggle">
                         <span class="slider"></span>
@@ -108,16 +117,16 @@
                 </div>
                 <div class="sleep-mode-options" id="sleep-mode-options">
                     <div class="sleep-option">
-                        <label for="sleep-brightness">Brightness</label>
+                        <label for="sleep-brightness" data-i18n="brightness">Brightness</label>
                         <input type="range" id="sleep-brightness" min="5" max="100" value="20">
                         <span id="brightness-value">20%</span>
                     </div>
                     <div class="sleep-option">
-                        <label for="sleep-auto-start">Auto-start at</label>
+                        <label for="sleep-auto-start" data-i18n="autoStart">Auto-start at</label>
                         <input type="time" id="sleep-auto-start" value="22:00">
                     </div>
                     <div class="sleep-option">
-                        <label for="sleep-auto-end">Auto-end at</label>
+                        <label for="sleep-auto-end" data-i18n="autoEnd">Auto-end at</label>
                         <input type="time" id="sleep-auto-end" value="06:00">
                     </div>
                 </div>
@@ -126,13 +135,13 @@
             <!-- Power Management Einstellungen -->
             <div class="power-section">
                 <div class="power-header">
-                    <h4>⚡ Power Management</h4>
+                    <h4 data-i18n="powerManagement">⚡ Power Management</h4>
                     <label class="toggle-switch">
                         <input type="checkbox" id="prevent-sleep-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <p class="power-description" id="power-status">Verhindert Mac-Schlafmodus wenn Alarm aktiv</p>
+                <p class="power-description" id="power-status" data-i18n="powerInactive">Prevents your Mac from sleeping while an alarm is active</p>
             </div>
             
             <!-- Wake Helper Section -->
@@ -143,16 +152,16 @@
                             <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
                             <line x1="12" y1="2" x2="12" y2="12"></line>
                         </svg>
-                        <span>Wake from Sleep</span>
+                        <span data-i18n="wakeFromSleep">Wake from Sleep</span>
                     </div>
                     <div class="wake-helper-status" id="wake-helper-status">
                         <span class="status-dot" id="helper-status-dot"></span>
-                        <span id="helper-status-text">Checking...</span>
+                        <span id="helper-status-text" data-i18n="checking">Checking…</span>
                     </div>
                 </div>
-                <p class="wake-helper-desc">Installs a system helper that wakes your Mac from sleep before an alarm rings.</p>
+                <p class="wake-helper-desc" data-i18n="wakeHelperDescription">Installs a system helper that wakes your Mac from sleep before an alarm rings.</p>
                 <div class="wake-helper-actions">
-                    <button id="install-helper-btn" class="btn-helper-install">Install Helper</button>
+                    <button id="install-helper-btn" class="btn-helper-install" data-i18n="installHelper">Install Helper</button>
                 </div>
                 <div class="wake-helper-info" id="wake-helper-info" style="display: none;">
                     <small id="wake-helper-next"></small>
@@ -164,93 +173,93 @@
         <div id="alarm-modal" class="modal hidden">
             <div class="modal-content alarm-edit-modal">
                 <div class="modal-header">
-                    <h3 id="modal-title">New Alarm</h3>
-                    <button class="btn-close" id="close-modal">&times;</button>
+                    <h3 id="modal-title" data-i18n="newAlarm">New Alarm</h3>
+                    <button class="btn-close" id="close-modal" title="Close" aria-label="Close" data-i18n-title="close" data-i18n-aria-label="close">&times;</button>
                 </div>
                 <form id="alarm-form">
                     <input type="hidden" id="alarm-id">
                     
                     <div class="form-row">
                         <div class="form-group time-group">
-                            <label for="alarm-time">Alarm Time</label>
+                            <label for="alarm-time" data-i18n="alarmTime">Alarm Time</label>
                             <input type="time" id="alarm-time" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="alarm-label">Label</label>
-                        <input type="text" id="alarm-label" placeholder="e.g. Wake up">
+                        <label for="alarm-label" data-i18n="label">Label</label>
+                        <input type="text" id="alarm-label" placeholder="e.g. Wake up" data-i18n-placeholder="labelPlaceholder">
                     </div>
 
                     <div class="form-group">
-                        <label>Type</label>
+                        <label data-i18n="type">Type</label>
                         <div class="repeat-type-selector">
-                            <button type="button" class="repeat-type-btn active" data-type="recurring">Recurring</button>
-                            <button type="button" class="repeat-type-btn" data-type="once">Once</button>
+                            <button type="button" class="repeat-type-btn active" data-type="recurring" data-i18n="recurring">Recurring</button>
+                            <button type="button" class="repeat-type-btn" data-type="once" data-i18n="once">Once</button>
                         </div>
                         <input type="hidden" id="alarm-repeat-type" value="recurring">
                     </div>
 
                     <div class="form-group">
-                        <label>Days</label>
+                        <label data-i18n="days">Days</label>
                         <div class="weekdays-selector">
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="so">
-                                <span>S</span>
+                                <span data-i18n="weekdays.narrow.so">S</span>
                             </label>
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="mo">
-                                <span>M</span>
+                                <span data-i18n="weekdays.narrow.mo">M</span>
                             </label>
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="di">
-                                <span>T</span>
+                                <span data-i18n="weekdays.narrow.di">T</span>
                             </label>
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="mi">
-                                <span>W</span>
+                                <span data-i18n="weekdays.narrow.mi">W</span>
                             </label>
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="do">
-                                <span>T</span>
+                                <span data-i18n="weekdays.narrow.do">T</span>
                             </label>
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="fr">
-                                <span>F</span>
+                                <span data-i18n="weekdays.narrow.fr">F</span>
                             </label>
                             <label class="weekday-checkbox">
                                 <input type="checkbox" name="days" value="sa">
-                                <span>S</span>
+                                <span data-i18n="weekdays.narrow.sa">S</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="alarm-sound">Sound</label>
+                        <label for="alarm-sound" data-i18n="sound">Sound</label>
                         <div class="sound-selector">
                             <select id="alarm-sound">
-                                <option value="gentle-rise">🌅 Gentle Rise</option>
-                                <option value="morning-birds">🐦 Morning Birds</option>
-                                <option value="ocean-waves">🌊 Ocean Waves</option>
-                                <option value="wind-chimes">🎐 Wind Chimes</option>
-                                <option value="soft-piano">🎹 Soft Piano</option>
-                                <option value="zen-bells">🔔 Zen Bells</option>
-                                <option value="digital-beep">📟 Digital Beep</option>
-                                <option value="classic-alarm">⏰ Classic Alarm</option>
-                                <option value="rooster">🐓 Rooster</option>
-                                <option value="harp">🎵 Harp</option>
+                                <option value="gentle-rise" data-i18n="sounds.gentleRise">🌅 Gentle Rise</option>
+                                <option value="morning-birds" data-i18n="sounds.morningBirds">🐦 Morning Birds</option>
+                                <option value="ocean-waves" data-i18n="sounds.oceanWaves">🌊 Ocean Waves</option>
+                                <option value="wind-chimes" data-i18n="sounds.windChimes">🎐 Wind Chimes</option>
+                                <option value="soft-piano" data-i18n="sounds.softPiano">🎹 Soft Piano</option>
+                                <option value="zen-bells" data-i18n="sounds.zenBells">🔔 Zen Bells</option>
+                                <option value="digital-beep" data-i18n="sounds.digitalBeep">📟 Digital Beep</option>
+                                <option value="classic-alarm" data-i18n="sounds.classicAlarm">⏰ Classic Alarm</option>
+                                <option value="rooster" data-i18n="sounds.rooster">🐓 Rooster</option>
+                                <option value="harp" data-i18n="sounds.harp">🎵 Harp</option>
                             </select>
                             <button type="button" id="preview-sound" class="btn-preview">▶</button>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Volume Fade</label>
+                        <label data-i18n="volumeFade">Volume Fade</label>
                         <div class="volume-fade-control">
                             <input type="range" id="volume-slider" min="0" max="100" value="70">
                             <label class="fade-checkbox">
                                 <input type="checkbox" id="fade-enabled" checked>
-                                <span>Fade in</span>
+                                <span data-i18n="fadeIn">Fade in</span>
                             </label>
                         </div>
                     </div>
@@ -258,7 +267,7 @@
                     <div class="form-group snooze-group">
                         <label class="snooze-label">
                             <input type="checkbox" id="snooze-enabled" checked>
-                            <span>Snooze</span>
+                            <span data-i18n="snooze">Snooze</span>
                         </label>
                         <div class="snooze-duration-control">
                             <input type="number" id="snooze-duration" min="1" max="30" value="9">
@@ -267,8 +276,8 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" id="delete-alarm" class="btn-delete hidden">Delete</button>
-                        <button type="button" id="save-alarm" class="btn-save">Save</button>
+                        <button type="button" id="delete-alarm" class="btn-delete hidden" data-i18n="delete">Delete</button>
+                        <button type="button" id="save-alarm" class="btn-save" data-i18n="save">Save</button>
                     </div>
                 </form>
             </div>
@@ -280,15 +289,15 @@
                 <div class="wood-frame left"></div>
                 <div class="clock-body">
                     <div class="title-bar">
-                        <span class="title">⏰ ALARM!</span>
+                        <span class="title" data-i18n="alarmRinging">⏰ ALARM!</span>
                     </div>
                     <div class="alarm-ringing-display">
                         <div class="ringing-time" id="alarm-display-time">07:30</div>
                         <div class="ringing-label" id="alarm-display-label">Wake up</div>
                     </div>
                     <div class="alarm-actions">
-                        <button id="snooze-btn" class="btn-snooze">Snooze</button>
-                        <button id="dismiss-btn" class="btn-dismiss">Stop</button>
+                        <button id="snooze-btn" class="btn-snooze" data-i18n="snooze">Snooze</button>
+                        <button id="dismiss-btn" class="btn-dismiss" data-i18n="stop">Stop</button>
                     </div>
                 </div>
                 <div class="wood-frame right"></div>
@@ -299,6 +308,7 @@
     <script src="storage.js"></script>
     <script src="audio-player.js"></script>
     <script src="alarm-manager.js"></script>
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

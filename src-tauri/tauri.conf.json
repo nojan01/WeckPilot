@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "WeckPilot",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "identifier": "com.alarmmaster.clock",
   "build": {
     "frontendDist": "../dist"
@@ -52,7 +52,7 @@
       "helpers/uninstall.sh"
     ],
     "category": "Utility",
-    "shortDescription": "WeckPilot – moderner Wecker mit Wochenprogramm",
-    "longDescription": "WeckPilot ist eine moderne Wecker-Anwendung mit Digitalanzeige, mehreren Weckzeiten pro Tag, Wochenprogramm und progressiv ansteigender Lautstärke."
+    "shortDescription": "WeckPilot – modern alarm clock with weekly schedules",
+    "longDescription": "WeckPilot is a modern alarm clock with a digital display, multiple alarms per day, weekly schedules, gradually increasing volume, and English/German interface languages."
   }
 }

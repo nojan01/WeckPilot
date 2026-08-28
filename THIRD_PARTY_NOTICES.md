@@ -4,7 +4,7 @@ WeckPilot ist unter der MIT-Lizenz veröffentlicht. Die Anwendung verwendet
 darüber hinaus unveränderte Open-Source-Komponenten unter kompatiblen
 Lizenzbedingungen.
 
-## Lizenzprüfung für Version 1.1.4
+## Lizenzprüfung für Version 1.1.5
 
 Geprüft wurden die tatsächlich für `aarch64-apple-darwin` aufgelösten normalen
 und Build-Abhängigkeiten aus `src-tauri/Cargo.lock` sowie die installierten

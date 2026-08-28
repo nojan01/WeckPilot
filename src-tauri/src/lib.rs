@@ -16,14 +16,14 @@ fn prevent_sleep(minutes: u32) -> Result<String, String> {
             .spawn();
 
         match output {
-            Ok(_) => Ok(format!("Schlafmodus für {} Minuten deaktiviert", minutes)),
-            Err(e) => Err(format!("Fehler: {}", e)),
+            Ok(_) => Ok(format!("Sleep prevented for {} minutes", minutes)),
+            Err(e) => Err(format!("Error: {}", e)),
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Nur auf macOS unterstützt".to_string())
+        Err("Only supported on macOS".to_string())
     }
 }
 
@@ -49,14 +49,14 @@ fn wake_screen() -> Result<String, String> {
         let output = Command::new("caffeinate").args(["-u", "-t", "5"]).spawn();
 
         match output {
-            Ok(_) => Ok("Bildschirm aufgeweckt".to_string()),
-            Err(e) => Err(format!("Fehler: {}", e)),
+            Ok(_) => Ok("Screen awakened".to_string()),
+            Err(e) => Err(format!("Error: {}", e)),
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Nur auf macOS unterstützt".to_string())
+        Err("Only supported on macOS".to_string())
     }
 }
 
@@ -224,20 +224,20 @@ fn install_wake_helper(app: tauri::AppHandle) -> Result<String, String> {
 
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            Ok(format!("Wake Helper erfolgreich installiert.\n{}", stdout))
+            Ok(format!("Wake Helper installed successfully.\n{}", stdout))
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             if stderr.contains("User canceled") || stderr.contains("-128") {
-                Err("Installation vom Benutzer abgebrochen.".to_string())
+                Err("Installation canceled by the user.".to_string())
             } else {
-                Err(format!("Installation fehlgeschlagen: {}", stderr))
+                Err(format!("Installation failed: {}", stderr))
             }
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Nur auf macOS unterstützt".to_string())
+        Err("Only supported on macOS".to_string())
     }
 }
 
@@ -273,20 +273,20 @@ fn uninstall_wake_helper(app: tauri::AppHandle) -> Result<String, String> {
             .map_err(|e| format!("Failed to run uninstaller: {}", e))?;
 
         if output.status.success() {
-            Ok("Wake Helper erfolgreich deinstalliert.".to_string())
+            Ok("Wake Helper uninstalled successfully.".to_string())
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             if stderr.contains("User canceled") || stderr.contains("-128") {
-                Err("Deinstallation vom Benutzer abgebrochen.".to_string())
+                Err("Uninstallation canceled by the user.".to_string())
             } else {
-                Err(format!("Deinstallation fehlgeschlagen: {}", stderr))
+                Err(format!("Uninstallation failed: {}", stderr))
             }
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Nur auf macOS unterstützt".to_string())
+        Err("Only supported on macOS".to_string())
     }
 }
 
@@ -335,14 +335,14 @@ fn update_wake_schedule(
         }
 
         match &schedule.next_wake {
-            Some(wake) => Ok(format!("Wake-Schedule aktualisiert: {}", wake)),
-            None => Ok("Wake-Schedule deaktiviert".to_string()),
+            Some(wake) => Ok(format!("Wake schedule updated: {}", wake)),
+            None => Ok("Wake schedule disabled".to_string()),
         }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Nur auf macOS unterstützt".to_string())
+        Err("Only supported on macOS".to_string())
     }
 }
 
@@ -380,12 +380,12 @@ fn schedule_wake(hour: u8, minute: u8) -> Result<String, String> {
             serde_json::to_string_pretty(&schedule).map_err(|e| format!("JSON error: {}", e))?;
         std::fs::write(schedule_file, &json).map_err(|e| format!("Write error: {}", e))?;
 
-        Ok(format!("Aufwachen geplant für {}", iso_formatted))
+        Ok(format!("Wake scheduled for {}", iso_formatted))
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Nur auf macOS unterstützt".to_string())
+        Err("Only supported on macOS".to_string())
     }
 }
 
@@ -406,8 +406,7 @@ pub fn run() {
                     .copyright(Some("Copyright © 2026 Norbert Jander"))
                     .credits(Some(include_str!("../../LICENSE")))
                     .build();
-                let about_item =
-                    PredefinedMenuItem::about(app, Some("Über WeckPilot"), Some(about))?;
+                let about_item = PredefinedMenuItem::about(app, None, Some(about))?;
 
                 app_menu.remove_at(0)?;
                 app_menu.insert(&about_item, 0)?;
