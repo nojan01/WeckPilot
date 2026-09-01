@@ -16,6 +16,9 @@ let schedulePath = "\(sharedDir)/schedule.json"
 let statePath = "\(sharedDir)/state.json"
 let logPath = "\(sharedDir)/helper.log"
 
+let assertLabel = "de.little-tools.weckpilot.wake-assert"
+let assertPlistPath = "/Library/LaunchDaemons/\(assertLabel).plist"
+
 // MARK: - Data Models
 
 struct Schedule: Codable {
@@ -140,6 +143,107 @@ func scheduleWake(datetime: String) -> Bool {
     }
 }
 
+// MARK: - Wake Assertion Job
+//
+// A pmset wake is often only a short "dark wake": without a power assertion
+// the Mac goes back to sleep after ~30 seconds and the display stays off.
+// To fix this we install a launchd job with a StartCalendarInterval at the
+// wake time that runs `caffeinate -d -i -u -t 300`. launchd runs calendar
+// jobs that were missed during sleep as soon as the Mac wakes, so this keeps
+// the system awake for 5 minutes and turns the display on.
+
+@discardableResult
+func runLaunchctl(_ args: [String]) -> (status: Int32, output: String) {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+    process.arguments = args
+
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    process.standardError = pipe
+
+    do {
+        try process.run()
+        process.waitUntilExit()
+        let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        return (process.terminationStatus, output.trimmingCharacters(in: .whitespacesAndNewlines))
+    } catch {
+        return (-1, "\(error)")
+    }
+}
+
+/// Remove the wake assertion launchd job (if present)
+func removeAssertJob() {
+    let fileManager = FileManager.default
+    if fileManager.fileExists(atPath: assertPlistPath) {
+        runLaunchctl(["unload", assertPlistPath])
+        try? fileManager.removeItem(atPath: assertPlistPath)
+        log("Removed wake assertion job")
+    } else {
+        // In case the job is loaded but the file is gone
+        runLaunchctl(["remove", assertLabel])
+    }
+}
+
+/// Install a launchd job that keeps the Mac awake at the scheduled wake time
+func installAssertJob(for date: Date) {
+    let calendar = Calendar.current
+    let comps = calendar.dateComponents([.month, .day, .hour, .minute], from: date)
+    guard let month = comps.month, let day = comps.day,
+          let hour = comps.hour, let minute = comps.minute else {
+        log("Cannot extract date components for assertion job")
+        return
+    }
+
+    let plist = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>\(assertLabel)</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/usr/bin/caffeinate</string>
+            <string>-d</string>
+            <string>-i</string>
+            <string>-u</string>
+            <string>-t</string>
+            <string>300</string>
+        </array>
+        <key>StartCalendarInterval</key>
+        <dict>
+            <key>Month</key>
+            <integer>\(month)</integer>
+            <key>Day</key>
+            <integer>\(day)</integer>
+            <key>Hour</key>
+            <integer>\(hour)</integer>
+            <key>Minute</key>
+            <integer>\(minute)</integer>
+        </dict>
+        <key>RunAtLoad</key>
+        <false/>
+    </dict>
+    </plist>
+    """
+
+    do {
+        try plist.write(toFile: assertPlistPath, atomically: true, encoding: .utf8)
+        let attrs: [FileAttributeKey: Any] = [.posixPermissions: 0o644]
+        try? FileManager.default.setAttributes(attrs, ofItemAtPath: assertPlistPath)
+
+        let result = runLaunchctl(["load", assertPlistPath])
+        if result.status == 0 {
+            log("Installed wake assertion job for \(month)/\(day) \(String(format: "%02d:%02d", hour, minute)) (caffeinate 300s)")
+        } else {
+            log("Failed to load wake assertion job: \(result.output)")
+        }
+    } catch {
+        log("Error writing assertion plist: \(error)")
+    }
+}
+
 /// List current scheduled wake events
 func listScheduledEvents() -> String {
     let process = Process()
@@ -216,6 +320,9 @@ func main() {
         saveState(state)
     }
     
+    // Remove previous wake assertion job (re-installed below if needed)
+    removeAssertJob()
+    
     // Read schedule file
     guard fileManager.fileExists(atPath: schedulePath) else {
         log("No schedule file found at \(schedulePath)")
@@ -252,10 +359,18 @@ func main() {
     }
     
     // Schedule wake 1 minute early to give system time to fully wake
-    let earlyWakeDate = wakeDate.addingTimeInterval(-60)
+    var earlyWakeDate = wakeDate.addingTimeInterval(-60)
+    
+    // If the early wake is already past but the alarm itself is still in the
+    // future, clamp to a few seconds from now instead of skipping entirely
+    let now = Date()
+    if earlyWakeDate <= now && wakeDate > now.addingTimeInterval(15) {
+        earlyWakeDate = now.addingTimeInterval(15)
+        log("Early wake in the past, clamped to \(earlyWakeDate)")
+    }
     
     // Only schedule if in the future
-    guard earlyWakeDate > Date() else {
+    guard earlyWakeDate > now else {
         log("Wake time is in the past: \(nextWakeStr)")
         saveState(state)
         return
@@ -272,6 +387,10 @@ func main() {
         
         let label = schedule.label ?? schedule.alarmTime ?? "alarm"
         log("Wake scheduled for \(pmsetDate) (alarm: \(label) at \(schedule.alarmTime ?? nextWakeStr))")
+        
+        // Keep the Mac awake after the pmset wake (prevents fall-back to sleep
+        // before the alarm fires) and turn the display on
+        installAssertJob(for: earlyWakeDate)
     }
     
     // Show current schedule

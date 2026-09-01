@@ -9,11 +9,13 @@ set -e
 
 HELPER_NAME="WeckPilotWakeHelper"
 PLIST_NAME="de.little-tools.weckpilot.wake-helper.plist"
+ASSERT_PLIST_NAME="de.little-tools.weckpilot.wake-assert.plist"
 INSTALL_DIR="/usr/local/bin"
 PLIST_DIR="/Library/LaunchDaemons"
 SHARED_DIR="/Users/Shared/WeckPilot"
 LEGACY_HELPER_NAME="AlarmMasterWakeHelper"
 LEGACY_PLIST_NAME="com.alarmmaster.wake-helper.plist"
+LEGACY_ASSERT_PLIST_NAME="com.alarmmaster.wake-assert.plist"
 LEGACY_SHARED_DIR="/Users/Shared/AlarmMaster"
 
 echo "=== WeckPilot Wake Helper Uninstaller ==="
@@ -29,17 +31,21 @@ if [ -f "$SHARED_DIR/state.json" ]; then
     fi
 fi
 
-# 2. Unload daemon
+# 2. Unload daemons
 echo "Unloading daemon..."
 launchctl unload "$PLIST_DIR/$PLIST_NAME" 2>/dev/null || true
+launchctl unload "$PLIST_DIR/$ASSERT_PLIST_NAME" 2>/dev/null || true
 launchctl unload "$PLIST_DIR/$LEGACY_PLIST_NAME" 2>/dev/null || true
+launchctl unload "$PLIST_DIR/$LEGACY_ASSERT_PLIST_NAME" 2>/dev/null || true
 
 # 3. Remove files
 echo "Removing files..."
 rm -f "$INSTALL_DIR/$HELPER_NAME"
 rm -f "$PLIST_DIR/$PLIST_NAME"
+rm -f "$PLIST_DIR/$ASSERT_PLIST_NAME"
 rm -f "$INSTALL_DIR/$LEGACY_HELPER_NAME"
 rm -f "$PLIST_DIR/$LEGACY_PLIST_NAME"
+rm -f "$PLIST_DIR/$LEGACY_ASSERT_PLIST_NAME"
 
 # 4. Optionally clean shared directory
 rm -f "$SHARED_DIR/state.json"
