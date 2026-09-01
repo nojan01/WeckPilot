@@ -171,10 +171,20 @@ const I18n = (() => {
         if (selector) selector.value = currentLanguage;
     }
 
+    /// Die macOS-Menueleiste wird in Rust gebaut und kennt den localStorage
+    /// nicht. Deshalb wird die tatsaechlich aktive Sprache dorthin gemeldet.
+    function syncMenuLanguage() {
+        const invoke = window.__TAURI__?.core?.invoke;
+        if (!invoke) return;
+        invoke('set_menu_language', { language: currentLanguage })
+            .catch(error => console.warn('Menu language could not be updated:', error));
+    }
+
     function setLanguage(language, persist = true) {
         currentLanguage = language === 'de' ? 'de' : 'en';
         if (persist) localStorage.setItem(STORAGE_KEY, currentLanguage);
         apply();
+        syncMenuLanguage();
         window.dispatchEvent(new CustomEvent('weckpilot-language-changed', {
             detail: { language: currentLanguage }
         }));
@@ -183,6 +193,7 @@ const I18n = (() => {
     function init() {
         currentLanguage = detectLanguage();
         apply();
+        syncMenuLanguage();
         document.getElementById('language-select')?.addEventListener('change', event => {
             setLanguage(event.target.value);
         });

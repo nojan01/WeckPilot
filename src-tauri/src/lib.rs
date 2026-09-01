@@ -389,6 +389,192 @@ fn schedule_wake(hour: u8, minute: u8) -> Result<String, String> {
     }
 }
 
+/// Beschriftungen der macOS-Menueleiste.
+///
+/// muda setzt fuer `PredefinedMenuItem` ohne Text englische Standardtexte ein
+/// und leitet den Namen aus `NSRunningApplication::localizedName` ab. Das
+/// Executable dieses Bundles heisst "app", deshalb erscheint dort sonst
+/// "About app" statt "Über WeckPilot". Jeder Eintrag wird daher ausdruecklich
+/// gesetzt -- das korrigiert zugleich den Namen und die Sprache.
+#[cfg(target_os = "macos")]
+struct MenuLabels {
+    about: String,
+    hide: String,
+    quit: String,
+    edit: &'static str,
+    undo: &'static str,
+    redo: &'static str,
+    cut: &'static str,
+    copy: &'static str,
+    paste: &'static str,
+    select_all: &'static str,
+    window: &'static str,
+    minimize: &'static str,
+    maximize: &'static str,
+    close: &'static str,
+}
+
+/// Die Texte folgen der Terminologie, die macOS selbst verwendet, damit das
+/// Menue sich nicht von anderen Programmen unterscheidet.
+#[cfg(target_os = "macos")]
+fn menu_labels(language: &str) -> MenuLabels {
+    const APP_NAME: &str = "WeckPilot";
+
+    if language == "de" {
+        MenuLabels {
+            about: format!("Über {APP_NAME}"),
+            hide: format!("{APP_NAME} ausblenden"),
+            quit: format!("{APP_NAME} beenden"),
+            edit: "Bearbeiten",
+            undo: "Widerrufen",
+            redo: "Wiederholen",
+            cut: "Ausschneiden",
+            copy: "Kopieren",
+            paste: "Einsetzen",
+            select_all: "Alles auswählen",
+            window: "Fenster",
+            minimize: "Im Dock ablegen",
+            maximize: "Zoomen",
+            close: "Schließen",
+        }
+    } else {
+        MenuLabels {
+            about: format!("About {APP_NAME}"),
+            hide: format!("Hide {APP_NAME}"),
+            quit: format!("Quit {APP_NAME}"),
+            edit: "Edit",
+            undo: "Undo",
+            redo: "Redo",
+            cut: "Cut",
+            copy: "Copy",
+            paste: "Paste",
+            select_all: "Select All",
+            window: "Window",
+            minimize: "Minimize",
+            maximize: "Zoom",
+            close: "Close",
+        }
+    }
+}
+
+/// Gleiche Regel wie `detectLanguage()` in `dist/i18n.js`: alles, was mit "de"
+/// beginnt, ist Deutsch, alles andere faellt auf Englisch zurueck.
+fn normalize_language(raw: &str) -> &'static str {
+    if raw.trim().to_ascii_lowercase().starts_with("de") {
+        "de"
+    } else {
+        "en"
+    }
+}
+
+/// Liest die erste Sprache aus der Plist-Liste, die `defaults` ausgibt:
+/// `(\n    "de-DE",\n    "en-DE"\n)`. Die erste Zeile gewinnt, denn macOS
+/// sortiert die Liste nach Vorrang.
+fn parse_apple_languages(output: &str) -> Option<&'static str> {
+    output.lines().find_map(|line| {
+        let start = line.find('"')? + 1;
+        let rest = &line[start..];
+        let end = rest.find('"')?;
+        Some(normalize_language(&rest[..end]))
+    })
+}
+
+/// Sprache fuer den ersten Menueaufbau. Die tatsaechliche Auswahl des Nutzers
+/// liegt im localStorage des Webviews und ist zu diesem Zeitpunkt noch nicht
+/// lesbar; das Frontend meldet sie direkt nach dem Laden nach.
+#[cfg(target_os = "macos")]
+fn system_language() -> &'static str {
+    let output = match std::process::Command::new("defaults")
+        .args(["read", "-g", "AppleLanguages"])
+        .output()
+    {
+        Ok(output) if output.status.success() => output,
+        _ => return "en",
+    };
+
+    parse_apple_languages(&String::from_utf8_lossy(&output.stdout)).unwrap_or("en")
+}
+
+#[cfg(target_os = "macos")]
+fn build_macos_menu<R: tauri::Runtime, M: tauri::Manager<R>>(
+    manager: &M,
+    language: &str,
+) -> tauri::Result<tauri::menu::Menu<R>> {
+    use tauri::menu::{AboutMetadataBuilder, Menu, PredefinedMenuItem, Submenu};
+
+    let labels = menu_labels(language);
+
+    let about = AboutMetadataBuilder::new()
+        .name(Some("WeckPilot"))
+        .version(Some(manager.package_info().version.to_string()))
+        .copyright(Some("Copyright © 2026 Norbert Jander"))
+        .credits(Some(include_str!("../../LICENSE")))
+        .build();
+
+    let app_menu = Submenu::with_items(
+        manager,
+        "WeckPilot",
+        true,
+        &[
+            &PredefinedMenuItem::about(manager, Some(&labels.about), Some(about))?,
+            &PredefinedMenuItem::separator(manager)?,
+            &PredefinedMenuItem::hide(manager, Some(&labels.hide))?,
+            &PredefinedMenuItem::separator(manager)?,
+            &PredefinedMenuItem::quit(manager, Some(&labels.quit))?,
+        ],
+    )?;
+
+    // Ohne diese Eintraege reicht macOS Cmd+C/V/A nicht an den
+    // Webview weiter; das Namensfeld eines Weckers waere dann
+    // nicht mehr per Tastatur zu befuellen.
+    let edit_menu = Submenu::with_items(
+        manager,
+        labels.edit,
+        true,
+        &[
+            &PredefinedMenuItem::undo(manager, Some(labels.undo))?,
+            &PredefinedMenuItem::redo(manager, Some(labels.redo))?,
+            &PredefinedMenuItem::separator(manager)?,
+            &PredefinedMenuItem::cut(manager, Some(labels.cut))?,
+            &PredefinedMenuItem::copy(manager, Some(labels.copy))?,
+            &PredefinedMenuItem::paste(manager, Some(labels.paste))?,
+            &PredefinedMenuItem::select_all(manager, Some(labels.select_all))?,
+        ],
+    )?;
+
+    let window_menu = Submenu::with_items(
+        manager,
+        labels.window,
+        true,
+        &[
+            &PredefinedMenuItem::minimize(manager, Some(labels.minimize))?,
+            &PredefinedMenuItem::maximize(manager, Some(labels.maximize))?,
+            &PredefinedMenuItem::separator(manager)?,
+            &PredefinedMenuItem::close_window(manager, Some(labels.close))?,
+        ],
+    )?;
+
+    Menu::with_items(manager, &[&app_menu, &edit_menu, &window_menu])
+}
+
+/// Wird vom Frontend beim Start und bei jedem Sprachwechsel aufgerufen.
+#[tauri::command]
+fn set_menu_language(app: tauri::AppHandle, language: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let menu = build_macos_menu(&app, normalize_language(&language))
+            .map_err(|error| error.to_string())?;
+        app.set_menu(menu).map_err(|error| error.to_string())?;
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (&app, &language);
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -396,59 +582,7 @@ pub fn run() {
         .menu(|app| {
             #[cfg(target_os = "macos")]
             {
-                use tauri::menu::{AboutMetadataBuilder, Menu, PredefinedMenuItem, Submenu};
-
-                let about = AboutMetadataBuilder::new()
-                    .name(Some("WeckPilot"))
-                    .version(Some(app.package_info().version.to_string()))
-                    .copyright(Some("Copyright © 2026 Norbert Jander"))
-                    .credits(Some(include_str!("../../LICENSE")))
-                    .build();
-
-                let app_menu = Submenu::with_items(
-                    app,
-                    "WeckPilot",
-                    true,
-                    &[
-                        &PredefinedMenuItem::about(app, None, Some(about))?,
-                        &PredefinedMenuItem::separator(app)?,
-                        &PredefinedMenuItem::hide(app, None)?,
-                        &PredefinedMenuItem::separator(app)?,
-                        &PredefinedMenuItem::quit(app, None)?,
-                    ],
-                )?;
-
-                // Ohne diese Eintraege reicht macOS Cmd+C/V/A nicht an den
-                // Webview weiter; das Namensfeld eines Weckers waere dann
-                // nicht mehr per Tastatur zu befuellen.
-                let edit_menu = Submenu::with_items(
-                    app,
-                    "Edit",
-                    true,
-                    &[
-                        &PredefinedMenuItem::undo(app, None)?,
-                        &PredefinedMenuItem::redo(app, None)?,
-                        &PredefinedMenuItem::separator(app)?,
-                        &PredefinedMenuItem::cut(app, None)?,
-                        &PredefinedMenuItem::copy(app, None)?,
-                        &PredefinedMenuItem::paste(app, None)?,
-                        &PredefinedMenuItem::select_all(app, None)?,
-                    ],
-                )?;
-
-                let window_menu = Submenu::with_items(
-                    app,
-                    "Window",
-                    true,
-                    &[
-                        &PredefinedMenuItem::minimize(app, None)?,
-                        &PredefinedMenuItem::maximize(app, None)?,
-                        &PredefinedMenuItem::separator(app)?,
-                        &PredefinedMenuItem::close_window(app, None)?,
-                    ],
-                )?;
-
-                Menu::with_items(app, &[&app_menu, &edit_menu, &window_menu])
+                build_macos_menu(app, system_language())
             }
 
             #[cfg(not(target_os = "macos"))]
@@ -466,7 +600,8 @@ pub fn run() {
             get_wake_helper_status,
             install_wake_helper,
             uninstall_wake_helper,
-            update_wake_schedule
+            update_wake_schedule,
+            set_menu_language
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -480,4 +615,88 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_language_folgt_der_regel_des_frontends() {
+        for deutsch in ["de", "de-DE", "DE-de", " de-AT ", "de_CH"] {
+            assert_eq!(normalize_language(deutsch), "de", "{deutsch} ist Deutsch");
+        }
+
+        // Gegenprobe: alles andere faellt auf Englisch zurueck.
+        for englisch in ["en", "en-US", "fr-FR", "", "nl"] {
+            assert_eq!(normalize_language(englisch), "en", "{englisch} ist nicht Deutsch");
+        }
+    }
+
+    #[test]
+    fn parse_apple_languages_nimmt_die_erste_sprache() {
+        let deutsch = "(\n    \"de-DE\"\n)\n";
+        assert_eq!(parse_apple_languages(deutsch), Some("de"));
+
+        // macOS sortiert nach Vorrang, die erste Zeile entscheidet.
+        let englisch_zuerst = "(\n    \"en-US\",\n    \"de-DE\"\n)\n";
+        assert_eq!(parse_apple_languages(englisch_zuerst), Some("en"));
+
+        // Gegenprobe: ohne Anfuehrungszeichen gibt es nichts zu lesen.
+        assert_eq!(parse_apple_languages("(\n)\n"), None);
+        assert_eq!(parse_apple_languages(""), None);
+    }
+
+    /// Der eigentliche Fehler: ohne ausdruecklichen Text bildet muda den
+    /// Eintrag aus `NSRunningApplication::localizedName`, und das Executable
+    /// dieses Bundles heisst "app" -- im Menue stand deshalb "About app".
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn menu_labels_nennt_das_produkt_und_nicht_das_executable() {
+        for sprache in ["de", "en"] {
+            let labels = menu_labels(sprache);
+
+            for eintrag in [&labels.about, &labels.hide, &labels.quit] {
+                assert!(
+                    eintrag.contains("WeckPilot"),
+                    "{sprache}: {eintrag:?} nennt das Produkt nicht"
+                );
+                assert!(
+                    !eintrag.ends_with(" app"),
+                    "{sprache}: {eintrag:?} traegt noch den Executable-Namen"
+                );
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn menu_labels_uebersetzt_jeden_eintrag() {
+        let de = menu_labels("de");
+        let en = menu_labels("en");
+
+        assert_eq!(de.about, "Über WeckPilot");
+        assert_eq!(en.about, "About WeckPilot");
+
+        // Kein Eintrag darf in beiden Sprachen gleich bleiben, sonst waere
+        // die Uebersetzung unvollstaendig.
+        let paare: [(&str, &str, &str); 11] = [
+            ("edit", de.edit, en.edit),
+            ("undo", de.undo, en.undo),
+            ("redo", de.redo, en.redo),
+            ("cut", de.cut, en.cut),
+            ("copy", de.copy, en.copy),
+            ("paste", de.paste, en.paste),
+            ("select_all", de.select_all, en.select_all),
+            ("window", de.window, en.window),
+            ("minimize", de.minimize, en.minimize),
+            ("maximize", de.maximize, en.maximize),
+            ("close", de.close, en.close),
+        ];
+
+        for (feld, deutsch, englisch) in paare {
+            assert_ne!(deutsch, englisch, "{feld} ist nicht uebersetzt");
+            assert!(!deutsch.is_empty() && !englisch.is_empty(), "{feld} ist leer");
+        }
+    }
 }
