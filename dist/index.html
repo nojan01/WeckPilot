@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WeckPilot</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="appearance.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
@@ -99,6 +100,30 @@
                 </div>
             </div>
             
+            <div class="appearance-controls">
+                <label for="color-profile" data-i18n="colorProfile">Color profile</label>
+                <select id="color-profile">
+                    <option value="blue">Classic Blue</option>
+                    <option value="amber">Amber</option>
+                    <option value="red">Night Red</option>
+                    <option value="green">Forest Green</option>
+                    <option value="mono">Monochrome</option>
+                </select>
+                <label for="interface-scale" data-i18n="interfaceScale">Size</label>
+                <select id="interface-scale">
+                    <option value="70">70 %</option>
+                    <option value="80">80 %</option>
+                    <option value="90">90 %</option>
+                    <option value="100" selected>100 %</option>
+                    <option value="110">110 %</option>
+                    <option value="120">120 %</option>
+                    <option value="130">130 %</option>
+                    <option value="140">140 %</option>
+                    <option value="150">150 %</option>
+                </select>
+                <p id="appearance-status" role="status"></p>
+            </div>
+
             <!-- Alarm-Liste -->
             <div id="alarms-list" class="alarms-list">
                 <div class="empty-state">
@@ -309,6 +334,7 @@
     <script src="audio-player.js"></script>
     <script src="alarm-manager.js"></script>
     <script src="i18n.js"></script>
+    <script src="appearance.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

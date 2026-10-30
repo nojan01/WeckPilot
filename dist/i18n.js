@@ -7,6 +7,9 @@ const I18n = (() => {
     const STORAGE_KEY = 'weckpilot-language';
     const translations = {
         en: {
+            colorProfile: 'Color profile',
+            interfaceScale: 'Size',
+            scaleFailed: 'The window could not be resized.',
             language: 'Language',
             settings: 'Settings',
             quit: 'Quit WeckPilot',
@@ -69,6 +72,9 @@ const I18n = (() => {
             }
         },
         de: {
+            colorProfile: 'Farbprofil',
+            interfaceScale: 'Größe',
+            scaleFailed: 'Die Fenstergröße konnte nicht geändert werden.',
             language: 'Sprache',
             settings: 'Einstellungen',
             quit: 'WeckPilot beenden',

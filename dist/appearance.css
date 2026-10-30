@@ -1,0 +1,89 @@
+:root { --settings-surface: rgba(30, 40, 60, 0.98); }
+:root[data-profile="blue"] {
+    --wood-light: #7eacc5;
+    --wood-dark: #314f68;
+    --wood-grain: #527d99;
+}
+:root[data-profile="amber"] {
+    --digit-color: #ffd180;
+    --digit-glow: #ffab40;
+    --digit-dim: #49331d;
+    --clock-bg: #21170c;
+    --clock-bg-gradient: linear-gradient(180deg, #302110, #170e07);
+    --accent-blue: #a96612;
+    --settings-surface: rgba(44, 32, 19, 0.98);
+    --text-dim: #b6a38a;
+    --wood-light: #d3ad70;
+    --wood-dark: #805021;
+    --wood-grain: #ac7a3c;
+}
+:root[data-profile="red"] {
+    --digit-color: #ff8a80;
+    --digit-glow: #ef5350;
+    --digit-dim: #482122;
+    --clock-bg: #210e12;
+    --clock-bg-gradient: linear-gradient(180deg, #30141a, #16090c);
+    --accent-blue: #b44444;
+    --settings-surface: rgba(44, 23, 28, 0.98);
+    --text-dim: #bc9ca0;
+    --wood-light: #b77b7c;
+    --wood-dark: #582b35;
+    --wood-grain: #884a56;
+}
+:root[data-profile="green"] {
+    --digit-color: #a5d6a7;
+    --digit-glow: #66bb6a;
+    --digit-dim: #203d2a;
+    --clock-bg: #0e2118;
+    --clock-bg-gradient: linear-gradient(180deg, #173426, #09170f);
+    --accent-blue: #367b4b;
+    --settings-surface: rgba(23, 43, 32, 0.98);
+    --text-dim: #9ab7a4;
+    --wood-light: #89ad90;
+    --wood-dark: #31523e;
+    --wood-grain: #557c60;
+}
+:root[data-profile="mono"] {
+    --digit-color: #eeeeee;
+    --digit-glow: #bdbdbd;
+    --digit-dim: #383838;
+    --clock-bg: #161616;
+    --clock-bg-gradient: linear-gradient(180deg, #292929, #0f0f0f);
+    --accent-blue: #616161;
+    --settings-surface: rgba(37, 37, 37, 0.98);
+    --text-dim: #ababab;
+    --wood-light: #a7a7a7;
+    --wood-dark: #505050;
+    --wood-grain: #777777;
+}
+.settings-panel { background: var(--settings-surface); }
+.appearance-controls {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px 16px;
+    margin: 16px 0;
+}
+.appearance-controls select {
+    min-width: 0;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--text-dim);
+    background: var(--clock-bg);
+    color: var(--text-light);
+    font: inherit;
+}
+.appearance-controls select:focus-visible { outline: 2px solid var(--digit-color); }
+#appearance-status { grid-column: 1 / -1; font-size: 12px; }
+#appearance-status:empty { display: none; }
+
+/* Keep the same clock proportions when a small percentage also triggers
+   the legacy narrow-window media query. Zoom supplies the size change. */
+@media (max-width: 500px) {
+    :root[data-profile] .digit { font-size: 130px; }
+    :root[data-profile] .colon .dot { width: 18px; height: 18px; }
+    :root[data-profile] .colon { gap: 35px; }
+    :root[data-profile] .weekday-item { font-size: 16px; }
+    :root[data-profile] .weekdays-display { gap: 30px; }
+    :root[data-profile] .ringing-time { font-size: 72px; }
+}
